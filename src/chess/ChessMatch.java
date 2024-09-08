@@ -1,5 +1,6 @@
 package chess;
 
+import java.security.InvalidParameterException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -21,6 +22,7 @@ public class ChessMatch {
 	private boolean check;
 	private boolean checkMate;
 	private ChessPiece enPassantVulnerable;
+	private ChessPiece promoted;
 	
 	
 	
@@ -34,6 +36,10 @@ public class ChessMatch {
 		initialSetup();
 	}
 	
+	
+	public ChessPiece getPromoted() {
+		return promoted;
+	}
 	
 	public boolean getCheckMate() {
 		return checkMate;
@@ -86,6 +92,18 @@ public class ChessMatch {
 		
 		ChessPiece movedPiece = (ChessPiece)board.piece(target); 
 		
+		// Promotion
+		
+		promoted = null;
+		
+		if(movedPiece instanceof Pawn) {
+			if((movedPiece.getColor() == Color.WHITE && target.getRow() == 0) || (movedPiece.getColor() == Color.BLACK && target.getRow() == 7)){
+				promoted = (ChessPiece)board.piece(target);
+				promoted = replacePromotedPiece("");
+			}
+		}
+		
+		
 		this.check = (testCheck(opponent(currentPlayer))) ? true : false;
 		System.out.println(check);
 		if(testCheckMate(opponent(currentPlayer))) {
@@ -105,6 +123,31 @@ public class ChessMatch {
 	}
 	
 	
+	public ChessPiece replacePromotedPiece(String type){
+		if(promoted == null) {
+			throw new IllegalStateException("Não existe uma peça para ser promivida!");
+		}
+		if(!type.equals("B") && !type.equals("N") && !type.equals("R") && !type.equals("Q")) {
+			throw new InvalidParameterException("Tipo inválida para promoção");
+		}
+		Position pos = promoted.getChessPostion().toPosition();
+		Piece p = board.removePiece(pos);
+		piecesOnTheBoard.remove(p);
+		ChessPiece newPiece = newPiece(type, promoted.getColor());
+		board.placePiece(newPiece,pos);
+		piecesOnTheBoard.add(newPiece);
+		
+		return newPiece;
+		
+	}
+	
+	private ChessPiece newPiece(String type, Color color) {
+		if(type.equals("B")) return new Bishop(board,color);
+		if(type.equals("N")) return new Knight(board,color);
+		if(type.equals("Q")) return new Queen(board,color);
+		return new Rook(board,color);
+
+	}
 	
 	
 	
